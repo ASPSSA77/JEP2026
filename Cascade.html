@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Audio</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+      color: #222222;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 45vh; /* Légèrement réduit pour laisser de la place au lecteur */
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .player-card {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 380px;
+      background: #ffffff;
+      padding: 18px 22px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      box-sizing: border-box;
+    }
+
+    /* 1. ALIGNEMENT DES BOUTONS EN LIGNE */
+    .controls-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* BOUTON PRINCIPAL (PLAY / PAUSE) */
+    .btn-audio {
+      padding: 12px 22px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #2563eb;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    /* BOUTONS SECONDAIRES (-10s / +10s) */
+    .btn-secondary {
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #2563eb;
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn-audio:active, .btn-secondary:active {
+      transform: scale(0.95);
+    }
+
+    /* BARRE DE PROGRESSION & TEMPS */
+    .progress-wrapper {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .time {
+      font-size: 0.85rem;
+      color: #666666;
+      min-width: 35px;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cascade du ru de l’étang</h1>
+
+  <img src="Cascade du ru de l’étang.png" alt="Visuel">
+
+  <!-- CARTE LECTEUR AUDIO -->
+  <div class="player-card">
+    
+    <!-- CONTROLES (BOUTONS) -->
+    <div class="controls-wrapper">
+      <button id="rewindBtn" class="btn-secondary">↺ -10s</button>
+      <button id="playBtn" class="btn-audio">▶ Écouter</button>
+      <button id="forwardBtn" class="btn-secondary">+10s ↻</button>
+    </div>
+
+    <!-- PROGRESSION -->
+    <div class="progress-wrapper">
+      <span id="currentTime" class="time">0:00</span>
+      <input type="range" id="progressBar" value="0" min="0" step="0.1">
+      <span id="durationTime" class="time">0:00</span>
+    </div>
+
+  </div>
+
+  <audio id="Cascade" playsinline preload="metadata">
+    <source src="Cascade du ru de l’étang.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const audio = document.getElementById('monAudio');
+    const playBtn = document.getElementById('playBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationTimeEl = document.getElementById('durationTime');
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return "0:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // Basculer Lecture / Pause
+    function togglePlay() {
+      if (audio.paused) {
+        audio.play().then(() => {
+          playBtn.textContent = '⏸ Pause';
+        }).catch(err => console.log("Blocage :", err));
+      } else {
+        audio.pause();
+        playBtn.textContent = '▶ Écouter';
+      }
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+
+    // Reculer de 10 secondes (sans descendre en dessous de 0 seconde)
+    rewindBtn.addEventListener('click', () => {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+    });
+
+    // Avancer de 10 secondes (sans dépasser la durée totale)
+    forwardBtn.addEventListener('click', () => {
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+      progressBar.max = audio.duration;
+      durationTimeEl.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      progressBar.value = audio.currentTime;
+      currentTimeEl.textContent = formatTime(audio.currentTime);
+    });
+
+    progressBar.addEventListener('input', () => {
+      audio.currentTime = progressBar.value;
+    });
+
+    window.addEventListener('load', () => {
+      if (audio.duration) {
+        progressBar.max = audio.duration;
+        durationTimeEl.textContent = formatTime(audio.duration);
+      }
+      
+      audio.play().then(() => {
+        playBtn.textContent = '⏸ Pause';
+      }).catch(() => {
+        playBtn.textContent = '▶ Écouter';
+      });
+    });
+  </script>
+
+</body>
+</html>
